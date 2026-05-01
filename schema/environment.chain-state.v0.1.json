@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schema/environment.chain-state.v0.1.json",
+  "title": "environment.chain_state",
+  "description": "Constraint schema for environment.chain_state. Member of the environment.* primitive family established by environment.market_state (agent-intent/verifiable-intent PR #9) and environment.wallet_state (agent-intent/verifiable-intent PR #22). v0.1-draft. Family-wide sections (§4.6 freshness, §4.7 algorithm agility, §4.8 field scope, §5.5 family composition, §6.8 JWKS caching, §6.9 cross-chain temporal, Appendix C register discipline) live upstream in the verifiable-intent PRs and will be lifted into environment-charter alongside market_state and wallet_state in a coordinated v0.2 round.",
+  "type": "object",
+  "required": [
+    "type",
+    "attestation_url",
+    "trusted_jwks",
+    "expected_kid",
+    "expected_issuer",
+    "chain_id",
+    "expected_status",
+    "max_attestation_age"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "environment.chain_state",
+      "description": "Constraint type discriminator. MUST be the literal string 'environment.chain_state'."
+    },
+    "attestation_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "description": "HTTPS endpoint at which the verifier fetches the signed attestation. Family-wide-trust-root-agnostic (see §4.8). Per-type wire-protocol variance (HTTP verb, request body) is carried by attestation_request_body and §4.1, not by this field."
+    },
+    "trusted_jwks": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "description": "HTTPS URL of the JWKS document the verifier uses to discover the issuer's signing key. Per-type-trust-root-mechanism-bound (see §4.8). Trust binds to this URL; URL migration is a new-mandate event (see §6.3)."
+    },
+    "expected_kid": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Expected key identifier in the published JWKS. The verifier MUST select the key whose kid matches this field; selection by any other criterion is non-conforming. Per-type-trust-root-mechanism-bound (see §4.8)."
+    },
+    "expected_issuer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Expected issuer identity. For Ed25519 attestations matching the environment.market_state signing-stack precedent, this is the issuer hostname carried in the attestation envelope. Per-type-trust-root-mechanism-bound (see §4.8)."
+    },
+    "chain_id": {
+      "type": "string",
+      "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$",
+      "description": "CAIP-2 chain identifier for the subject chain. REQUIRED, no fallback. This is the per-member distinguishing field for §5.5 family composition. Examples: 'eip155:1', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', 'bip122:000000000019d6689c085ae165831e93', 'cosmos:cosmoshub-4'. Per-type-evaluation-mechanism-bound (see §4.8)."
+    },
+    "expected_status": {
+      "type": "string",
+      "enum": ["LIVE", "DEGRADED", "STALLED", "UNKNOWN"],
+      "description": "Status value the attestation MUST carry for the constraint to satisfy. Verifiers MUST reject when attestation status differs from this value. The four-element enum mirrors environment.market_state's OPEN/CLOSED/HALTED/UNKNOWN cardinality and fail-closed posture; UNKNOWN is included so a mandate may explicitly require an UNKNOWN attestation (rare; useful for testing) but consumers MUST NOT treat an UNKNOWN attestation as satisfying expected_status: LIVE. Per-type-evaluation-mechanism-bound (see §4.8)."
+    },
+    "max_attestation_age": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum acceptable wall-clock age, in seconds, between attestation issuance and constraint evaluation. Family-wide-trust-root-agnostic (see §4.6). REQUIRED with no default; verifiers MUST reject mandates where this field is absent or malformed. Family-wide semantics: this is the consumer-policy bound on the TOCTOU window between the issuer's freshness telemetry and the agent's L3 verification."
+    },
+    "stale_cache_fallback_permitted": {
+      "type": "boolean",
+      "description": "Whether verifiers MAY use an expired JWKS cache as a last-resort fallback when fresh JWKS fetch fails. Per-type-trust-root-mechanism-bound (see §4.8). OPTIONAL; verifiers MUST apply default false when absent. If present, MUST be boolean; non-boolean values MUST be rejected as malformed. Mandates with strict-freshness requirements MUST NOT set this to true."
+    },
+    "max_cross_chain_skew_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum acceptable wall-clock divergence, in seconds, between the chain-tip timestamps of the multiple environment.chain_state attestations in a single mandate. Per-type-evaluation-mechanism-bound (see §4.8). OPTIONAL; absent means no cross-chain skew bound is imposed. Verifiers MUST evaluate cross-chain skew only when the mandate's environment.chain_state constraints anchor to more than one chain_id. See §6.9."
+    },
+    "min_finality_depth": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum acceptable confirmation depth at attestation time. Per-type-evaluation-mechanism-bound (see §4.8). OPTIONAL; absent means no finality-depth check beyond per-attestation freshness. Semantics for 'finality' are chain-family-specific and declared by the issuer out of band; see §6.9. Verifiers measure finality depth via independent chain read at verification time."
+    }
+  }
+}
