@@ -28,7 +28,7 @@ Currently realized as:
 - `environment.market_state` — cryptographically-signed attestation that an
   exchange (XNYS, XNAS, etc.) is OPEN, CLOSED, or HALTED at time of execution
 - `environment.wallet_state` — cryptographically-signed attestation that a
-  wallet satisfies caller-specified conditions across 33 chains at time of
+  wallet satisfies caller-specified conditions across 38 chains at time of
   execution
 
 The membership criterion and admission process for new constraint types are
